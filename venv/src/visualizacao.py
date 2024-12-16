@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import socket
 
 # Configurações do Graphite (ajuste conforme necessário)
-GRAPHITE_HOST = '127.0.0.1'
+GRAPHITE_HOST = '172.17.0.2'
 GRAPHITE_PORT = 2003
 
 # Conectar ao MongoDB
