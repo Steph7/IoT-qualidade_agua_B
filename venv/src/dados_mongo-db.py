@@ -9,7 +9,8 @@ collection = db.mycollection
 # Dados JSON
 dados = {
     "sensor": "temperatura",
-    "valor": 23.5
+    "valor": 23.5,
+    "timestamp" : "2024-12-10T15:30:00Z"
 }
 
 # Salva o JSON diretamente (o MongoDB converte para BSON)
