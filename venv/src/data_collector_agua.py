@@ -148,7 +148,7 @@ while True:
     client.loop_forever()
 
     # Limpar Listas 
-    #dados_coletados.clear()
-    #threads.clear()
+    dados_coletados.clear()
+    threads.clear()
     
     time.sleep(900)
