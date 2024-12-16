@@ -6,11 +6,19 @@ def on_connect(client, userdata, flags, rc):
     print(f"Conectado com o código {rc}")
     
     # Dados coletados (exemplo de temperatura)
-    dados = {"sensor": "temperatura", "valor": 23.5}
-    
+    dados_t = {"sensor": "temperatura", "valor": 23.5}
+    dados_u = {"sensor": "umidade", "valor": 65.9}
+    dados_p = {"sensor": "pressão", "valor": 15}
+
     # Publica os dados no tópico "dados/coletados"
-    client.publish("dados/coletados", json.dumps(dados))
-    print("Dados publicados.")
+    client.publish("dados/temperatura", json.dumps(dados_t))
+    print("Dados publicados Temperatura. \n")
+
+    client.publish("dados/umidade", json.dumps(dados_u))
+    print("Dados publicados Umidade. \n")
+
+    client.publish("dados/pressao", json.dumps(dados_p))
+    print("Dados publicados Pressão. \n")
 
     # Desconectar após a publicação
     client.disconnect()
