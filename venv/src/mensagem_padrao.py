@@ -1,3 +1,5 @@
+import json
+
 sensores = [
     ('estacao_01', ['sensor_01', 'sensor_02','sensor_03', 'sensor_04', 'sensor_05', 'sensor_06']),
     ('estacao_02', ['sensor_07','sensor_08', 'sensor_09', 'sensor_10', 'sensor_11', 'sensor_12']),
@@ -36,22 +38,25 @@ periodicidade = "15 minutos"
 
 mensagem_completa = []
 
-def criar_mensagem_incricao():
+def criar_mensagem_incricao():    
     for i in range(len(estacoes)):
+        sensores_por_estacao = []
         for j in range(len(parametros_nome)):
-            mensagem_padrao = {
-                f"{sensores[i][0]}": f"{estacoes[i]}",
-                "sensors": [
-                    {
-                        "sensor_id": f"{sensores[i][1][j]}",
-                        "data_type": f"{parametros_nome[j]}",
-                        "data_interval": periodicidade
-                    }
-                ]
-            }
-            mensagem_completa.append(mensagem_padrao)
+            sns = {
+                    "sensor_id": f"{sensores[i][1][j]}",
+                    "data_type": f"{parametros_nome[j]}",
+                    "data_interval": periodicidade
+                }
+            sensores_por_estacao.append(sns)
+            
+        mensagem_padrao = {
+            f"{sensores[i][0]}": f"{estacoes[i]}", 
+            "sensors" : sensores_por_estacao
+        }           
+        mensagem_completa.append(mensagem_padrao)
+    return mensagem_completa
 
 # Exibindo as mensagens
 criar_mensagem_incricao()
 for msg in mensagem_completa:
-    print(msg)
+    print(json.dumps(msg, indent=4))
