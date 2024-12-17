@@ -26,12 +26,12 @@ estacoes = [
 
 # Lista de parâmetros
 parametros_nome = [
-    "oxigenio_dissolvido",    #A
-    "turbidez",               #B
-    "temperatura",            #C
-    "condutividade",          #D
-    "amonio",                 #E
-    "ph"                      #F     
+    "oxigenio_dissolvido",    #A - 01, 07, 13, 19, 25, 31, 37, 43, 49
+    "turbidez",               #B - 02, 08, 14, 20, 26, 32, 38, 44, 50
+    "temperatura",            #C - 03, 09, 15, 21, 27, 33, 39, 45, 51
+    "condutividade",          #D - 04, 10, 16, 22, 28, 34, 40, 46, 52
+    "amonio",                 #E - 05, 11, 17, 23, 29, 35, 41, 47, 53
+    "ph"                      #F - 06, 12, 18, 24, 30, 36, 42, 48, 54   
 ]
 
 periodicidade = "15 minutos"
