@@ -39,12 +39,12 @@ parametros_url = [
 ]
 
 parametros_nome = [
-    "Oxigênio Dissolvido",    #A
-    "Turbidez",               #B
-    "Temperatura",            #C
-    "Condutividade",          #D
-    "Amônio",                 #E
-    "PH "                     #F     
+    "oxigenio_dissolvido",    #A
+    "turbidez",               #B
+    "temperatura",            #C
+    "condutividade",          #D
+    "amonio",                 #E
+    "ph"                      #F     
 ]
 
 atualizar_nome_param = dict(zip(parametros_url, parametros_nome))
@@ -99,57 +99,63 @@ def coletar_dados_15min(estacao_id, parametro):
 
 threads = []
 
-while True:
-    for estacao in estacoes:
-        for parametro in parametros_url:
-            t = threading.Thread(target=coletar_dados_15min, args=(estacao, parametro))
-            threads.append(t)
-            t.start()
-    
-    for t in threads:
-        t.join();
-
-    print("\nDados Coletados:")
-    for dado in dados_coletados:
-        print(f"Estação: {dado.estacao}, Parâmetro: {dado.parametro}, Valor: {dado.valor} mg/L, Data/Hora: {dado.data_hora}")
-    
-    # Publicar dado no BROKER
-    # Função de callback para quando a conexão com o broker for estabelecida
-    def on_connect(client, userdata, flags, rc):
-        print(f"Conectado com o código {rc}")
+def loop_coletar_dados(client):
+    while True:
+        for estacao in estacoes:
+            for parametro in parametros_url:
+                t = threading.Thread(target=coletar_dados_15min, args=(estacao, parametro))
+                threads.append(t)
+                t.start()
+        
+        for t in threads:
+            t.join();
 
         for dado in dados_coletados:
-          # Estrutura do tópico: 'thames/<estacao>/<parametro>'
-          topico = f"thames/{dado.estacao}/{dado.parametro}"
+            # Estrutura do tópico: 'thames/<estacao>/<parametro>'
+            topico = f"thames/{dado.estacao}/{dado.parametro}"
 
-          # Dados a serem enviados
-          dados_enviar = {
-              "valor": dado.valor,
-              "data_hora": dado.data_hora
-          }
-  
-          # Publica a string no tópico
-          client.publish(topico, json.dumps(dados_enviar))
-          print("Dados publicados.")
-    
-        # Desconectar após a publicação
-        client.disconnect()
-    
-    # Cria a conexão com o broker
-    broker = "broker.hivemq.com"
-    client = mqtt.Client()
-    
-    # Define o callback de conexão
-    client.on_connect = on_connect
-    
-    # Conecta ao broker
-    client.connect(broker, 1883, 60)
-    
-    # Loop para manter a conexão ativa até a publicação
-    client.loop_forever()
+            # Dados a serem enviados
+            dados_enviar = {
+                "sensor": dado.parametro,
+                "valor": dado.valor,
+                "data_hora": dado.data_hora
+            }
 
-    # Limpar Listas 
-    dados_coletados.clear()
-    threads.clear()
+            # Publica a string no tópico
+            client.publish(topico, json.dumps(dados_enviar))
+            print(f"Mensagem publicada: {topico} - {dados_enviar}")
+
+            #print("\nDados Coletados:")
+            #for dado in dados_coletados:
+                #print(f"Estação: {dado.estacao}, Parâmetro: {dado.parametro}, Valor: {dado.valor} mg/L, Data/Hora: {dado.data_hora}")
+        
+
+            time.sleep(1) # Espera um pouco para não sobrecarregar o broker
+        
+        
+        # Limpar Listas 
+        #dados_coletados.clear()
+        #threads.clear()
+
+        # Aguarda por novos dados dos sensores
+        time.sleep(900)  
+
+        # Loop para manter a conexão ativa até a publicação
+        client.loop_forever()
+   
+# Função de callback para quando o cliente MQTT se conectar
+def on_connect(client, userdata, flags, rc):
+    print(f"Conectado ao broker com código {rc}")
+
+# Cria a conexão com o broker
+broker = "broker.hivemq.com"
+client = mqtt.Client()
+
+# Define o callback de conexão
+client.on_connect = on_connect
+
+# Conecta ao broker
+client.connect(broker, 1883, 60)
+
     
-    time.sleep(900)
+loop_coletar_dados(client)

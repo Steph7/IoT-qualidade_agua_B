@@ -9,9 +9,9 @@ def on_message(client, userdata, msg):
         print(f"Dados recebidos: {dados}")
         
         # Processamento dos dados (exemplo: conversão de temperatura)
-        if "Parâmetro" in dados and "Valor" in dados:
-            if dados["Parâmetro"] == "temperatura":
-                temperatura_celsius = dados["Valor"]
+        if "sensor" in dados and "valor" in dados:
+            if dados["sensor"] == "temperatura":
+                temperatura_celsius = dados["valor"]
                 temperatura_fahrenheit = (temperatura_celsius * 9/5) + 32
                 print(f"Temperatura em Fahrenheit: {temperatura_fahrenheit:.2f}°F")
             else:
