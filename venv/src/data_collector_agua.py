@@ -15,6 +15,19 @@ class DadoEstacao:
     def __str__(self):
         return f"Estação: {self.estacao}, Parâmetro: {self.parametro}, Valor: {self.valor} mg/L, Data/Hora: {self.data_hora}"
 
+# Lista de Sensores por estação
+sensores = [
+    ('estacao_01', ['sensor_01', 'sensor_02','sensor_03', 'sensor_04', 'sensor_05', 'sensor_06']),
+    ('estacao_02', ['sensor_07','sensor_08', 'sensor_09', 'sensor_10', 'sensor_11', 'sensor_12']),
+    ('estacao_03', ['sensor_13','sensor_14', 'sensor_15', 'sensor_16', 'sensor_17', 'sensor_18']),
+    ('estacao_04', ['sensor_19','sensor_20', 'sensor_21', 'sensor_22', 'sensor_23', 'sensor_24']),
+    ('estacao_05', ['sensor_25','sensor_26', 'sensor_27', 'sensor_28', 'sensor_19', 'sensor_30']),
+    ('estacao_06', ['sensor_31','sensor_32', 'sensor_33', 'sensor_34', 'sensor_35', 'sensor_36']),
+    ('estacao_07', ['sensor_37','sensor_38', 'sensor_39', 'sensor_40', 'sensor_41', 'sensor_42']),
+    ('estacao_08', ['sensor_43','sensor_44', 'sensor_45', 'sensor_46', 'sensor_47', 'sensor_48']),
+    ('estacao_09', ['sensor_49','sensor_50', 'sensor_51', 'sensor_52', 'sensor_53', 'sensor_54'])
+]
+
 # Lista de IDs das estações
 estacoes = [
     "BREPON",  #01
@@ -39,12 +52,12 @@ parametros_url = [
 ]
 
 parametros_nome = [
-    "oxigenio_dissolvido",    #A
-    "turbidez",               #B
-    "temperatura",            #C
-    "condutividade",          #D
-    "amonio",                 #E
-    "ph"                      #F     
+    "oxigenio_dissolvido",    #A - 01, 07, 13, 19, 25, 31, 37, 43, 49
+    "turbidez",               #B - 02, 08, 14, 20, 26, 32, 38, 44, 50
+    "temperatura",            #C - 03, 09, 15, 21, 27, 33, 39, 45, 51
+    "condutividade",          #D - 04, 10, 16, 22, 28, 34, 40, 46, 52
+    "amonio",                 #E - 05, 11, 17, 23, 29, 35, 41, 47, 53
+    "ph"                      #F - 06, 12, 18, 24, 30, 36, 42, 48, 54   
 ]
 
 atualizar_nome_param = dict(zip(parametros_url, parametros_nome))
@@ -97,6 +110,28 @@ def coletar_dados_15min(estacao_id, parametro):
     except requests.exceptions.RequestException as e:
         print(f"Erro ao acessar a API: {e}")
 
+periodicidade = "15 minutos"
+
+mensagem_completa = []
+
+def criar_mensagem_incricao():   
+    for i in range(len(estacoes)):
+        sensores_por_estacao = []
+        for j in range(len(parametros_nome)):
+            sns = {
+                    "sensor_id": f"{sensores[i][1][j]}",
+                    "data_type": f"{parametros_nome[j]}",
+                    "data_interval": periodicidade
+                }
+            sensores_por_estacao.append(sns)
+            
+        mensagem_padrao = {
+            f"{sensores[i][0]}": f"{estacoes[i]}", 
+            "sensors" : sensores_por_estacao
+        }           
+        mensagem_completa.append(mensagem_padrao)
+    return mensagem_completa
+
 threads = []
 
 def loop_coletar_dados(client):
@@ -112,7 +147,7 @@ def loop_coletar_dados(client):
 
         for dado in dados_coletados:
             # Estrutura do tópico: 'thames/<estacao>/<parametro>'
-            topico = f"thames/{dado.estacao}/{dado.parametro}"
+            topico = f"/thames/{dado.estacao}/{dado.parametro}"
 
             # Dados a serem enviados
             dados_enviar = {
@@ -143,9 +178,15 @@ def loop_coletar_dados(client):
         # Loop para manter a conexão ativa até a publicação
         client.loop_forever()
    
+TOPIC = "/thames"
+
 # Função de callback para quando o cliente MQTT se conectar
 def on_connect(client, userdata, flags, rc):
     print(f"Conectado ao broker com código {rc}")
+    mensagem_inicial = criar_mensagem_incricao()
+    client.publish(TOPIC, json.dumps(mensagem_inicial))
+
+    time.sleep(3)
 
 # Cria a conexão com o broker
 broker = "broker.hivemq.com"
@@ -157,5 +198,6 @@ client.on_connect = on_connect
 # Conecta ao broker
 client.connect(broker, 1883, 60)
 
+client.loop_start()
     
 loop_coletar_dados(client)
