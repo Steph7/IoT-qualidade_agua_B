@@ -2,6 +2,7 @@ import threading
 import requests
 import time
 import paho.mqtt.client as mqtt
+import json
 
 # Definir Classe para armazenar os dados coletados
 class DadoEstacao:
