@@ -1,21 +1,33 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 import json
 
 # Conecta ao MongoDB
 client = MongoClient('mongodb://localhost:27017/')
-db = client.mydatabase
-collection = db.mycollection
 
-# Dados JSON
-dados = {
-    "sensor": "temperatura",
-    "valor": 23.5,
-    "timestamp" : "2024-12-10T15:30:00Z"
-}
+# Selecionar o banco de dados 'qualidade_agua'
+db = client.qualidade_agua
 
-# Salva o JSON diretamente (o MongoDB converte para BSON)
-collection.insert_one(dados)
+# Acessar várias coleções
+colecao_estacao_01 = db.estacao_01
+colecao_estacao_02 = db.estacao_02
+colecao_estacao_03 = db.estacao_03
 
-# Recupera o JSON armazenado
-resultado = collection.find_one({"sensor": "temperatura"})
-print(resultado)  # O MongoDB devolve o dado como JSON
+"""
+# Criar 9 coleções para as estações
+for estacao_num in range(1, 10):
+    estacao_nome = f"estacao_0{estacao_num}"
+    
+    # Criar coleção para a estação
+    estacao = db[estacao_nome]
+    
+    # Criar 6 subcoleções para os sensore"
+    for sensor_num in range(1, 7):
+        sensor_nome = f"sensor_0{sensor_num}"
+        sensor_data = estacao[sensor_nome]
+        
+        # Criar um índice TTL (Time To Live) na coleção para o campo 'timestamp'
+        sensor_data.create_index([("timestamp", ASCENDING)], expireAfterSeconds=10800)  # Expira após 3 horas
+"""
+# Listar todos os bancos de dados
+bancos_de_dados = client.list_database_names()
+print("Bancos de dados:", bancos_de_dados)
