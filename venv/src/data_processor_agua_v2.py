@@ -1,6 +1,11 @@
 import paho.mqtt.client as mqtt
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 import json
+
+
+# Conecte-se ao MongoDB (no caso, usando o localhost e a porta padrão)
+client = MongoClient("mongodb://localhost:27017/")
+db = client['qualidade_agua']
 
 # Função de callback para processar os dados recebidos
 def on_message(client, userdata, msg):
@@ -9,11 +14,21 @@ def on_message(client, userdata, msg):
         dados = json.loads(msg.payload)
 
         # Processamento dos dados
-        if "estacao" in dados and "valor" in dados:
+        if "sensor" in dados and "valor" in dados:
+            estacao = db[dados["estacao"]] #cria coleção no BD
+            sensor = estacao[dados["sensor"]] #cria sub-coleção
+            sensor.create_index([("data_hora", ASCENDING)], expireAfterSeconds=10800)  #Expira dados após 3 horas
+            del dados["estacao"]
+
+        # Processamento dos dados
+        if "sensor" in dados and "valor" in dados:
             if dados["sensor"] == "temperatura":
                 temperatura_celsius = dados["valor"]
                 temperatura_fahrenheit = (temperatura_celsius * 9/5) + 32
                 print(f"Temperatura em Fahrenheit: {temperatura_fahrenheit:.2f}°F")
+                del dados["sensor"]
+                print(json.dumps(dados, indent=4))
+                sensor.insert_one(dados) # Inserir dados no BD
             else:
                 print("Sensor desconhecido!")
         else:

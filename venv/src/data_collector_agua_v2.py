@@ -152,8 +152,8 @@ def loop_coletar_dados(client):
             dados_enviar = {
                 "estacao": dado.estacao,
                 "sensor": dado.parametro,
-                "valor": dado.valor,
-                "data_hora": dado.data_hora
+                "data_hora": dado.data_hora,
+                "valor": dado.valor
             }
 
             # Publica a string no tópico
