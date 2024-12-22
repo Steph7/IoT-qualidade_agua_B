@@ -7,30 +7,30 @@ import json
 client = MongoClient("mongodb://localhost:27017/")
 db = client['qualidade_agua']
 
-# Função de callback para processar os dados recebidos
+# Função de callback para salvar os dados recebidos
 def on_message(client, userdata, msg):
     try:
         # Recebe a mensagem do broker
         dados = json.loads(msg.payload)
 
-        # Processamento dos dados
+        # Salva dados no Banco de Dados
         if "sensor" in dados and "valor" in dados:
-            estacao = db[dados["estacao"]] #cria coleção no BD
-            sensor = estacao[dados["sensor"]] #cria sub-coleção
-            sensor.create_index([("data_hora", ASCENDING)], expireAfterSeconds=10800)  #Expira dados após 3 horas
+            estacao = dados["estacao"]
+            sns = dados["sensor"]
+            colecao = db[estacao] #cria coleção no BD
             del dados["estacao"]
+            del dados["sensor"]
+            dados_sns = dados
+            
+            colecao.update_one(
+                {'_id': estacao}, 
+                {
+                    '$push': {sns: dados_sns} 
+                },
+                upsert=True  # Cria o documento caso não exista
+            )
+            print(f"Dados de {sns} da estação {estacao} inseridos no BD com sucesso!")
 
-        # Processamento dos dados
-        if "sensor" in dados and "valor" in dados:
-            if dados["sensor"] == "temperatura":
-                temperatura_celsius = dados["valor"]
-                temperatura_fahrenheit = (temperatura_celsius * 9/5) + 32
-                print(f"Temperatura em Fahrenheit: {temperatura_fahrenheit:.2f}°F")
-                del dados["sensor"]
-                print(json.dumps(dados, indent=4))
-                sensor.insert_one(dados) # Inserir dados no BD
-            else:
-                print("Sensor desconhecido!")
         else:
             # Imprime a mensagem recebida
             print(json.dumps(dados, indent=4))
@@ -39,6 +39,9 @@ def on_message(client, userdata, msg):
         print("Erro ao decodificar a mensagem JSON.")
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
+
+# Função para processar os dados
+
 
 def on_connect(client, userdata, flags, rc):
     print(f"Conectado ao broker com código {rc}")
@@ -50,8 +53,8 @@ broker = "broker.hivemq.com"
 client = mqtt.Client()
 client.connect(broker, 1883, 60)
 
-# Inscreve no tópico "dados/coletados"
-client.subscribe("/thames/+/temperatura")
+# Inscreve em todos os tópicos
+client.subscribe("/thames/#")
 
 # Define a função de callback para mensagens recebidas
 client.on_connect = on_connect
