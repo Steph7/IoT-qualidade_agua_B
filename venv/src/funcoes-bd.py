@@ -77,55 +77,72 @@ def normalizar_intervalo(valor, limite_inferior, limite_superior):
 
     return valor_normalizado 
 
+# Filtra as notas e pesos válidos (nota > zero)
+# Calcula o produtório entre as notas válidas
+def calcular_produtorio_com_pesos(notas, pesos):
+    notas_validas = [nota for nota in notas if nota > 0]
+    pesos_validos = [peso for i, peso in enumerate(pesos) if notas[i] > 0]
+
+    if not notas_validas:
+        return 1  # Evita divisão por zero
+
+    soma_pesos_validos = sum(pesos_validos)
+
+    pesos_normalizados = [peso / soma_pesos_validos for peso in pesos_validos]
+
+    produtorio = 1
+    for nota, peso_normalizado in zip(notas_validas, pesos_normalizados):
+        produtorio *= (nota ** peso_normalizado)
+
+    return produtorio
+
 # Avaliar Qualidade da Água para cada Estação
 def nota_qualidade_agua(estacao, pesos, limites):
+    notas_estacao = []
+
     #Avaliar o Oxigênio Dissolvido
     o2 = estacao.get('oxigenio_dissolvido', 0)
     nota_o2 = normalizar_intervalo(o2, limites["oxigenio_dissolvido"][0], limites["oxigenio_dissolvido"][1])
-    nota_o2_pond = nota_o2**pesos[0]
-    print(nota_o2_pond)
+    notas_estacao.append(nota_o2)
+    #print(nota_o2)
 
     #Avaliar a Turbidez
-    #turb = acessar_sensor(estacao, 'turbidez')
     turb = estacao.get('turbidez', 0)
     nota_turb = normalizar_intervalo(turb, limites["turbidez"][0], limites["turbidez"][1])
-    nota_turb_pond = nota_turb**pesos[1]
-    print(nota_turb_pond)
+    notas_estacao.append(nota_turb)
+    #print(nota_turb)
 
     #Avaliar a Temperatura
-    #temp = acessar_sensor(estacao, 'temperatura')
     temp = estacao.get('temperatura', 0)
     nota_temp = normalizar_intervalo(temp, limites["temperatura"][0], limites["temperatura"][1])
-    nota_temp_pond = nota_temp**pesos[2]
-    print(nota_temp_pond)
+    notas_estacao.append(nota_temp)
+    #print(nota_temp)
 
     #Avaliar a Condutividade
-    #cond = acessar_sensor(estacao, 'condutividade')
     cond = estacao.get('condutividade', 0)
     nota_cond = normalizar_intervalo(cond, limites["condutividade"][0], limites["condutividade"][1])
-    nota_cond_pond = nota_cond**pesos[3]
-    print(nota_cond_pond)
+    notas_estacao.append(nota_cond)
+    #print(nota_cond)
 
     #Avaliar a Quantidade de Amônio
-    #amn = acessar_sensor(estacao, 'amonio')
     amn = estacao.get('amonio', 0)
     nota_amn = normalizar_intervalo(amn, limites["amonio"][0], limites["amonio"][1])
-    nota_amn_pond = nota_amn**pesos[4]
-    print(nota_amn_pond)
+    notas_estacao.append(nota_amn)
+    #print(nota_amn)
 
     #Avaliar o pH
-    #ph = acessar_sensor(estacao, 'ph')
     ph = estacao.get('ph', 0)
     nota_pH = normalizar_intervalo(ph, limites["ph"][0], limites["ph"][1])
-    nota_pH_pond = nota_pH**pesos[5]
-    print(nota_pH_pond)
+    notas_estacao.append(nota_pH)
+    #print(nota_pH)
 
-    produtorio = nota_o2_pond * nota_turb_pond * nota_temp_pond * nota_cond_pond * nota_amn_pond * nota_pH_pond
+    produtorio = calcular_produtorio_com_pesos(notas_estacao, pesos)
 
     return produtorio
 
 
 def qualificar_agua(produto):
+    qualidade = "não qualificado"
     if 0 <= produto <= 25:
         qualidade = "Péssima"
 
@@ -141,6 +158,9 @@ def qualificar_agua(produto):
     if 91 <= produto <= 100:
         qualidade = "Ótima"
     
+    if produto >= 100:
+        qualidade = "Excelente"
+    
     return qualidade
 
 
@@ -155,14 +175,23 @@ if __name__ == "__main__":
     for estacao in db.list_collection_names():
         obter_dados_estacao(estacao, lista_estacoes)
 
-    """
-    # Exibir os dados coletados
     for estacao in lista_estacoes:
-        print(estacao"
-    """
-
-    for estacao in lista_estacoes:
-        print(estacao.id_estacao)
         prod_Teste = nota_qualidade_agua(estacao.dados, pesos, limites)
-        print("Nota:", "{:.3f}".format(round(prod_Teste, 3)), "--- Avaliação:", qualificar_agua(prod_Teste))
+
+        estacao = estacao.id_estacao
+        colecao = db[estacao] #encontra coleção no BD
+
+        nota_quali = "{:.3f}".format(round(prod_Teste, 3))
+        quali = qualificar_agua(prod_Teste)
+        
+        colecao.update_one(
+            {'_id': estacao}, 
+            {
+                '$push': {'nota': nota_quali, 'qualidade': quali} 
+            },
+            upsert=True  
+        )
+
+        print(estacao)
+        print("Nota:", nota_quali, "--- Avaliação:", quali)
         print("\n")
