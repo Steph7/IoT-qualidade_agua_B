@@ -62,10 +62,10 @@ parametros_nome = [
 
 atualizar_nome_param = dict(zip(parametros_url, parametros_nome))
 
-dados_coletados = []
+
 
 # Coletar dados de cada estação a cada 15 minutos
-def coletar_dados_15min(estacao_id, parametro):
+def coletar_dados_15min(estacao_id, parametro, dados_coletados):
     url = f"https://environment.data.gov.uk/hydrology/id/measures/{estacao_id}{parametro}/readings.json?latest"
 
     try:
@@ -133,11 +133,12 @@ def criar_mensagem_incricao():
 
 
 def loop_coletar_dados(client):
+    dados_coletados = []
     threads = []
     while True:
         for estacao in estacoes:
             for parametro in parametros_url:
-                t = threading.Thread(target=coletar_dados_15min, args=(estacao, parametro))
+                t = threading.Thread(target=coletar_dados_15min, args=(estacao, parametro, dados_coletados))
                 threads.append(t)
                 t.start()
         
@@ -166,14 +167,9 @@ def loop_coletar_dados(client):
 
             time.sleep(1) # Espera um pouco para não sobrecarregar o broker
 
-        # Limpar Listas 
-        dados_coletados.clear()
-
         # Aguarda por novos dados dos sensores
-        time.sleep(900)  # 15 min 
+        time.sleep(1080)  # 18 min 
 
-        # Loop para manter a conexão ativa até a publicação
-        client.loop_forever()
    
 TOPIC = "/thames"
 
