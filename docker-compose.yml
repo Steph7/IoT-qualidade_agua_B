@@ -1,0 +1,59 @@
+version: "3"
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate    
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - mongo_network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.3
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
+      - ELASTICSEARCH_ENROLLMENT_TOKEN=eyJ2ZXIiOiI4LjUuMyIsImFkciI6WyIxNzIuMTkuMC4zOjkyMDAiXSwiZmdyIjoiNjQ5MDVhMzk4MmI3MTlhNmU1ZjZjYjM1ZjNmYTIzMmMxMzc1ZWE2MWY4ZTBkZGFmMzE3YjFmNmYyOGJjZDBmOCIsImtleSI6IlN1ZDc4Wk1CaXlESllkUnFBQkJ6OjFfd05TSjJTUWJDWHA1aWt0SE9PSEEifQ==
+    ports:
+      - "5601:5601"
+    networks:
+      - mongo_network
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.5.3
+    container_name: logstash
+    environment:
+      - LS_JAVA_OPTS=-Xmx1g -Xms1g
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    networks:
+      - mongo_network
+    depends_on:
+      - mongo
+      - elasticsearch
+
+networks:
+  mongo_network:
+    driver: bridge
