@@ -239,7 +239,7 @@ def on_message(client, userdata, msg):
             print(f"{contador}: Dados de {sns} da estação {estacao} inseridos com sucesso!")
             contador += 1
 
-            if contador == 54:
+            if contador == 48:
                 dados_recebidos.set()
                 contador = 0
 
