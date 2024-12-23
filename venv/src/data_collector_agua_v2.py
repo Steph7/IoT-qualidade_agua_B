@@ -194,3 +194,10 @@ client.connect(broker, 1883, 60)
 client.loop_start()
     
 loop_coletar_dados(client)
+
+# Aguardar a interrupção do programa
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Programa interrompido pelo usuário.")
