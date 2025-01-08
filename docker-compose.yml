@@ -6,7 +6,37 @@ services:
     ports:
       - "27017:27017"
     networks:
-      - mongo_network
+      - monitoring  # Certifique-se de usar a mesma rede para todos os serviços
+
+  mongodb-exporter:
+    image: bitnami/mongodb-exporter:latest
+    container_name: mongodb-exporter
+    environment:
+      MONGODB_URI: mongodb://mongo:27017  # Conectando ao serviço mongo
+    ports:
+      - "9216:9216"
+    networks:
+      - monitoring  # A mesma rede que o mongo
+
+  data_collector:
+    build:
+      context: .  # O diretório atual onde o Dockerfile está localizado
+    command: python /app/venv/src/data_collector_agua_v2.py  # Sobrescreve o comando padrão, caso queira
+    container_name: data_collector
+    volumes:
+      - .:/app  # Monta o diretório local dentro do contêiner em /app
+    networks:
+      - monitoring
+
+  data_processor:
+    build:
+      context: .  # O diretório atual onde o Dockerfile está localizado
+    command: python /app/venv/src/data_processor_agua_v2.py  # Sobrescreve o comando padrão, caso queira
+    container_name: data_processor
+    volumes:
+      - .:/app  # Monta o diretório local dentro do contêiner em /app
+    networks:
+      - monitoring
 
   prometheus:
     image: prom/prometheus:v2.46.0
@@ -15,42 +45,17 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
     networks:
-      - monitoring
+      - monitoring  # A mesma rede que o mongo
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: "admin"
-    depends_on:
-      - prometheus
-    volumes:
-      - grafana-data:/var/lib/grafana
     networks:
-      - monitoring
-
-  mongodb-exporter:
-    image: bitnami/mongodb-exporter:latest
-    container_name: mongodb-exporter
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017  # Conecta-se ao MongoDB
-    ports:
-      - "9216:9216"  # Porta onde as métricas são expostas
-    networks:
-      - monitoring
+      - monitoring  # A mesma rede que o mongo
 
 networks:
   monitoring:
-    driver: bridge
-  mongo_network:
-    driver: bridge
-
-volumes:
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
+    driver: bridge  # Rede compartilhada entre todos os serviços
