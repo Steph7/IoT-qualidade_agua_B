@@ -4,7 +4,7 @@ import json
 
 
 # Conecte-se ao MongoDB (no caso, usando o localhost e a porta padrão)
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb://mongo:27017/")
 db = client['qualidade_agua']
 
 # Função de callback para salvar os dados recebidos

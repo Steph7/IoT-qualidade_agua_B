@@ -7,12 +7,12 @@ client = MongoClient('mongodb://localhost:27017/')
 # Selecionar o banco de dados 'qualidade_agua'
 db = client.qualidade_agua
 
+"""
 # Acessar várias coleções
 colecao_estacao_01 = db.estacao_01
 colecao_estacao_02 = db.estacao_02
 colecao_estacao_03 = db.estacao_03
 
-"""
 # Criar 9 coleções para as estações
 for estacao_num in range(1, 10):
     estacao_nome = f"estacao_0{estacao_num}"
@@ -27,7 +27,24 @@ for estacao_num in range(1, 10):
         
         # Criar um índice TTL (Time To Live) na coleção para o campo 'timestamp'
         sensor_data.create_index([("timestamp", ASCENDING)], expireAfterSeconds=10800)  # Expira após 3 horas
-"""
+
 # Listar todos os bancos de dados
 bancos_de_dados = client.list_database_names()
 print("Bancos de dados:", bancos_de_dados)
+
+"""
+
+docs = db.list_collection_names()
+
+for nome_colecao in docs:
+    print(f"\nColeção: {nome_colecao}")
+    
+    # Selecionar a coleção
+    colecao = db[nome_colecao]
+    
+    # Obter todos os documentos da coleção
+    documentos = colecao.find()
+    
+    # Exibir todos os documentos dessa coleção
+    for documento in documentos:
+        print(json.dumps(documento, indent=4))
