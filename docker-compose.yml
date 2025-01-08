@@ -27,6 +27,8 @@ services:
       - .:/app  # Monta o diretório local dentro do contêiner em /app
     networks:
       - monitoring
+    depends_on:
+      - mongo 
 
   data_processor:
     build:
@@ -37,6 +39,9 @@ services:
       - .:/app  # Monta o diretório local dentro do contêiner em /app
     networks:
       - monitoring
+    depends_on:
+      - data_collector  
+      - mongo 
 
   prometheus:
     image: prom/prometheus:v2.46.0
