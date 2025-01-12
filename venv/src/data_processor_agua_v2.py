@@ -1,11 +1,17 @@
 import paho.mqtt.client as mqtt
-from pymongo import MongoClient, ASCENDING
+from prometheus_client import start_http_server, Gauge
 import json
+from datetime import datetime
 
+# Criando uma métrica Gauge 
+QUALIDADE_AGUA = Gauge('qualidade_agua', 'Sensores avaliados no Rio Thames', ['estacao', 'sensor', 'data_hora'])
+start_http_server(8000) 
 
-# Conecte-se ao MongoDB (no caso, usando o localhost e a porta padrão)
-client = MongoClient("mongodb://mongo:27017/")
-db = client['qualidade_agua']
+# Enviar dados para o Prometheus
+def enviar_dados_prometheus(estacao, sensor, data_hora, valor):
+    
+    QUALIDADE_AGUA.labels(estacao=estacao, sensor=sensor, data_hora=data_hora).set(valor)
+    print(f"Enviado - Estação: {estacao}, Sensor: {sensor}, Valor: {valor}, Data_Hora: {data_hora}")
 
 # Função de callback para salvar os dados recebidos
 def on_message(client, userdata, msg):
@@ -14,22 +20,8 @@ def on_message(client, userdata, msg):
         dados = json.loads(msg.payload)
 
         # Salva dados no Banco de Dados
-        if "sensor" in dados and "valor" in dados:
-            estacao = dados["estacao"]
-            sns = dados["sensor"]
-            colecao = db[estacao] #cria coleção no BD
-            del dados["estacao"]
-            del dados["sensor"]
-            dados_sns = dados
-            
-            colecao.update_one(
-                {'_id': estacao}, 
-                {
-                    '$push': {sns: dados_sns} 
-                },
-                upsert=True  # Cria o documento caso não exista
-            )
-            print(f"Dados de {sns} da estação {estacao} inseridos no BD com sucesso!")
+        if "sensor" in dados and "valor" in dados:        
+            enviar_dados_prometheus(dados['estacao'], dados['sensor'], dados['data_hora'], dados['valor'])        
 
         else:
             # Imprime a mensagem recebida

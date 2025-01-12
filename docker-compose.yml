@@ -1,39 +1,21 @@
 version: "3.7"
 services:
-  mongo:
-    image: mongo:latest
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    networks:
-      - monitoring  # Certifique-se de usar a mesma rede para todos os serviços
-
-  mongodb-exporter:
-    image: bitnami/mongodb-exporter:latest
-    container_name: mongodb-exporter
-    environment:
-      MONGODB_URI: mongodb://mongo:27017  # Conectando ao serviço mongo
-    ports:
-      - "9216:9216"
-    networks:
-      - monitoring  # A mesma rede que o mongo
-
   data_collector:
     build:
       context: .  # O diretório atual onde o Dockerfile está localizado
-    command: python /app/venv/src/data_collector_agua_v2.py  # Sobrescreve o comando padrão, caso queira
+    command: python /app/venv/src/data_collector_agua_v2.py 
     container_name: data_collector
     volumes:
       - .:/app  # Monta o diretório local dentro do contêiner em /app
     networks:
       - monitoring
     depends_on:
-      - mongo 
+      - prometheus 
 
   data_processor:
     build:
       context: .  # O diretório atual onde o Dockerfile está localizado
-    command: python /app/venv/src/data_processor_agua_v2.py  # Sobrescreve o comando padrão, caso queira
+    command: python /app/venv/src/data_processor_agua_v2.py 
     container_name: data_processor
     volumes:
       - .:/app  # Monta o diretório local dentro do contêiner em /app
@@ -41,25 +23,29 @@ services:
       - monitoring
     depends_on:
       - data_collector  
-      - mongo 
+      - prometheus 
 
   prometheus:
-    image: prom/prometheus:v2.46.0
+    image: prom/prometheus:latest
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
-      - monitoring  # A mesma rede que o mongo
+      - monitoring
+    restart: unless-stopped  
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
+    depends_on:
+      - prometheus
     networks:
-      - monitoring  # A mesma rede que o mongo
+      - monitoring
+    restart: unless-stopped
 
 networks:
   monitoring:

@@ -1,15 +1,20 @@
-# Usar uma imagem base do Python
+# Use a imagem base Python
 FROM python:3.9-slim
 
-# Define o diretório de trabalho dentro do contêiner
+# Defina o diretório de trabalho
 WORKDIR /app
 
-# Copiar os arquivos locais para o diretório de trabalho no contêiner
-# Isso copiará o script Python e o arquivo requirements.txt
-COPY . /app
+# Copie o requirements.txt para o container
+COPY requirements.txt .
 
-# Instalar as dependências do arquivo requirements.txt
+# Instale as dependências
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Comando padrão para rodar o script data_collector_agua_v2.py
-CMD ["python", "/venv/src/data_collector_agua_v2.py"]
+# Copie o código do projeto para o container
+COPY . .
+
+# Dê permissão para o script run_both.sh ser executado
+RUN chmod +x /venv/src/run_both.sh
+
+# Comando para rodar o script que executa ambos os programas
+CMD ["/bin/bash", "/venv/src/run_both.sh"]
